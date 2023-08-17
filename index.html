@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particulas</title>
+    <style>
+        canvas{
+            border: 2px solid black;
+        }
+        .sinal{
+            width: 75px;
+            height: 75px;
+            background-color: red;
+        }
+    </style>
+</head>
+<body onload="init()">
+    <canvas id="canvas" width="1000px" height="500px"></canvas>
+    <div class="sinal" onclick="mudarSinal()"></div>
+    <script>
+        let canvas = document.querySelector("canvas")
+        let ctx = canvas.getContext('2d')
+
+        let sinalBotao = 1;
+        const k = 500
+
+        let particulas = []
+
+        function position(canvas, event){
+            let rect = canvas.getBoundingClientRect()
+            return{
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top
+            }
+        }
+
+        canvas.addEventListener("click", function(event){
+            let mousePos = position(canvas, event)
+
+            particulas.push({
+                x: mousePos.x,
+                y: mousePos.y,
+                varX: 0,
+                varY: 0,
+                sinal: sinalBotao
+            })
+
+        })
+
+        function calcularAceleracao(){
+            for (let i = 0; i < particulas.length; i++) {
+                for(let j=0; j < particulas.length; j++){
+                    if(j!=i){
+                        let distX = particulas[i].x-particulas[j].x
+                        let distY = particulas[i].y-particulas[j].y
+                        let forca = (k*particulas[i].sinal*particulas[j].sinal)/(Math.pow(distX, 2) + Math.pow(distY, 2))
+                        let cos = distX / Math.sqrt(Math.pow(distX, 2) + Math.pow(distY, 2)) 
+                        let sen = distY / Math.sqrt(Math.pow(distX, 2) + Math.pow(distY, 2)) 
+
+                        particulas[i].varX += forca * cos
+                        particulas[i].varY += forca * sen
+                    }
+                }
+            }
+        }
+
+        function calcularVariacoes() {
+            particulas.forEach(element => {
+                element.x += element.varX
+                element.y += element.varY
+
+                if(element.x + 20 >= 1000 || element.x -20 <= 0){
+                    element.varX *= -1
+                }
+                if(element.y +20 >= 500 || element.y - 20 <= 0){
+                    element.varY *= -1
+                }
+            })
+        }
+
+        function renderizar(){
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+            calcularAceleracao();
+            calcularVariacoes();
+
+            particulas.forEach(element => {
+                ctx.beginPath();
+                element.sinal == 1 ? ctx.fillStyle = 'red' : ctx.fillStyle = 'blue'
+                
+                ctx.arc(element.x, element.y, 20, 0, 2*Math.PI)
+                ctx.fill()
+            });
+        }
+
+        function init() {
+            let intervalo = setInterval(renderizar, 10)
+        }
+
+        function mudarSinal() {
+            let butao = document.getElementsByClassName('sinal')
+            if(sinalBotao = 1){
+                
+                //butao.style.backgroundColor = "blue";
+                sinalBotao = -1;
+            }else if(sinalBotao = -1){
+                //butao.style.backgroundColor = "blue";
+                sinalBotao = 1;
+            }
+        }
+    </script>
+</body>
+</html>
