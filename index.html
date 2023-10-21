@@ -21,7 +21,7 @@
 </head>
 <body onload="renderizar()">
     <canvas id="canvas" width="1000px" height="500px"></canvas>
-    <div class="sinal" onclick="mudarSinal()"></div>
+    <div class="sinal" onclick="mudarSinal()">clique ou aperte ou aperte S para mudar o sinal</div>
     <input type="range" max="1" min="0" step="0.1" value="1" onInput="mudarDissipacao()" class="range" name="dissipacao">
     <label for="dissipacao" id="labelDissipacao">1</label>
 
@@ -139,15 +139,13 @@
             particulas.forEach(particula => {
                 particula.x += particula.velocidadeX
                 particula.y += particula.velocidadeY
-            })
 
-            particulas.forEach(element => {
                 ctx.beginPath();
-                element.sinal == 1 ? ctx.fillStyle = 'red' : ctx.fillStyle = 'blue'
+                particula.sinal == 1 ? ctx.fillStyle = 'red' : ctx.fillStyle = 'blue'
                 
-                ctx.arc(element.x, element.y, raio, 0, 2*Math.PI)
+                ctx.arc(particula.x, particula.y, raio, 0, 2*Math.PI)
                 ctx.fill()
-            });
+            })
         }
 
         addEventListener("keypress", (e) =>{
