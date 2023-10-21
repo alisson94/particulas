@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Particulas</title>
     <style>
+        body{
+            background-color: black;
+            color: white;
+        }
         canvas{
-            border: 2px solid black;
+            border: 2px solid white;
         }
         .sinal{
             width: 75px;
@@ -15,19 +19,24 @@
         }
     </style>
 </head>
-<body onload="init()">
+<body onload="renderizar()">
     <canvas id="canvas" width="1000px" height="500px"></canvas>
     <div class="sinal" onclick="mudarSinal()"></div>
+    <input type="range" max="1" min="0" step="0.1" value="1" onInput="mudarDissipacao()" class="range" name="dissipacao">
+    <label for="dissipacao" id="labelDissipacao">1</label>
+
     <script>
         let canvas = document.querySelector("canvas")
         let ctx = canvas.getContext('2d')
 
+        let raio = 20
         let sinalBotao = 1;
-        const k = 500
+        let dissipacaoParede = 1
+        const k = 1000
 
         let particulas = []
 
-        function position(canvas, event){
+        function posicaoDoMouse(canvas, event){
             let rect = canvas.getBoundingClientRect()
             return{
                 x: event.clientX - rect.left,
@@ -36,78 +45,115 @@
         }
 
         canvas.addEventListener("click", function(event){
-            let mousePos = position(canvas, event)
+            let mousePos = posicaoDoMouse(canvas, event)
 
             particulas.push({
                 x: mousePos.x,
                 y: mousePos.y,
-                varX: 0,
-                varY: 0,
+                velocidadeX: 0,
+                velocidadeY: 0,
                 sinal: sinalBotao
             })
 
         })
 
-        function calcularAceleracao(){
+        function calcularVelocidade(){
             for (let i = 0; i < particulas.length; i++) {
                 for(let j=0; j < particulas.length; j++){
                     if(j!=i){
-                        let distX = particulas[i].x-particulas[j].x
-                        let distY = particulas[i].y-particulas[j].y
-                        let forca = (k*particulas[i].sinal*particulas[j].sinal)/(Math.pow(distX, 2) + Math.pow(distY, 2))
-                        let cos = distX / Math.sqrt(Math.pow(distX, 2) + Math.pow(distY, 2)) 
-                        let sen = distY / Math.sqrt(Math.pow(distX, 2) + Math.pow(distY, 2)) 
+                        let distX = particulas[j].x-particulas[i].x
+                        let distY = particulas[j].y-particulas[i].y
+                        let distGeral = Math.sqrt(Math.pow(distX, 2) + Math.pow(distY, 2))//sempre positivo
 
-                        particulas[i].varX += forca * cos
-                        particulas[i].varY += forca * sen
+                        if (distGeral<raio*2){
+                            continue
+                        }
+
+                        let forca = -(k*particulas[i].sinal*particulas[j].sinal)/(distGeral*distGeral)
+                        let cos = distX / distGeral
+                        let sen = distY / distGeral
+
+                        particulas[i].velocidadeX += forca * cos
+                        particulas[i].velocidadeY += forca * sen
+                        
+
                     }
                 }
             }
         }
 
-        function calcularVariacoes() {
-            particulas.forEach(element => {
-                element.x += element.varX
-                element.y += element.varY
-
-                if(element.x + 20 >= 1000 || element.x -20 <= 0){
-                    element.varX *= -1
+        function calcularColisoes() {
+            particulas.forEach(particula1 => {
+                //colisao parede
+                if(particula1.x + particula1.velocidadeX + raio >= 1000 || particula1.x -raio <= 0){
+                    particula1.velocidadeX *= -1*dissipacaoParede
                 }
-                if(element.y +20 >= 500 || element.y - 20 <= 0){
-                    element.varY *= -1
+                if(particula1.y + particula1.velocidadeY + raio >= 500 || particula1.y - raio <= 0){
+                    particula1.velocidadeY *= -1*dissipacaoParede
                 }
+                
+                
+                //colisao com particulas
+                particulas.forEach(particula2 =>{
+                    if(particula1!=particula2){
+                        if(seColisao(particula1.x + particula1.velocidadeX, particula1.y + particula1.velocidadeY, particula2)){
+                            // while(!seColisao(
+                            //         particula1.x + particula1.velocidadeX/particula1.velocidadeX, 
+                            //         particula1.y + particula1.velocidadeY/particula1/velocidadeY,
+                            //         particula2
+                            //     ))
+                            //     {
+                            //         particula1.velocidadeX/=particula1.velocidadeX
+                            //         particula1.velocidadeY/=particula1.velocidadeY
+                            //     }
+                            particula1.velocidadeX *= -1*dissipacaoParede
+                            particula1.velocidadeY *= -1*dissipacaoParede
+                        }
+                    }
+                })
             })
         }
 
+        function seColisao(x, y, objeto) {
+            return(
+                Math.sqrt(Math.pow(x-objeto.x,2) + Math.pow(y-objeto.y,2)) < raio*2
+            )
+        }
+
+
         function renderizar(){
+            window.requestAnimationFrame(renderizar)
             ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-            calcularAceleracao();
-            calcularVariacoes();
+            calcularVelocidade()
+            calcularColisoes()
+
+            particulas.forEach(particula => {
+                particula.x += particula.velocidadeX
+                particula.y += particula.velocidadeY
+            })
 
             particulas.forEach(element => {
                 ctx.beginPath();
                 element.sinal == 1 ? ctx.fillStyle = 'red' : ctx.fillStyle = 'blue'
                 
-                ctx.arc(element.x, element.y, 20, 0, 2*Math.PI)
+                ctx.arc(element.x, element.y, raio, 0, 2*Math.PI)
                 ctx.fill()
             });
         }
 
-        function init() {
-            let intervalo = setInterval(renderizar, 10)
+        function mudarSinal() {
+            let botao = document.querySelector('.sinal')
+            sinalBotao *= -1
+            sinalBotao == 1 ? botao.style.backgroundColor = 'red' : botao.style.backgroundColor = 'blue'
         }
 
-        function mudarSinal() {
-            let butao = document.getElementsByClassName('sinal')
-            if(sinalBotao = 1){
-                
-                //butao.style.backgroundColor = "blue";
-                sinalBotao = -1;
-            }else if(sinalBotao = -1){
-                //butao.style.backgroundColor = "blue";
-                sinalBotao = 1;
-            }
+        function mudarDissipacao() {
+            let range = document.querySelector('.range')
+            let labelDissipacao = document.querySelector('#labelDissipacao')
+            dissipacaoParede = range.value
+            labelDissipacao.innerHTML = range.value
+            console.log(range.value)
         }
     </script>
 </body>
