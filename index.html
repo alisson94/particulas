@@ -106,8 +106,16 @@
                             //         particula1.velocidadeX/=particula1.velocidadeX
                             //         particula1.velocidadeY/=particula1.velocidadeY
                             //     }
-                            particula1.velocidadeX *= -1*dissipacaoParede
-                            particula1.velocidadeY *= -1*dissipacaoParede
+
+                            // particula1.velocidadeX *= -1*dissipacaoParede
+                            // particula1.velocidadeY *= -1*dissipacaoParede
+                            
+                            let backupVelocidade = [particula1.velocidadeX, particula1.velocidadeY]
+
+                            particula1.velocidadeX = particula2.velocidadeX*dissipacaoParede
+                            particula1.velocidadeY = particula2.velocidadeY*dissipacaoParede
+                            particula2.velocidadeX = backupVelocidade[0]*dissipacaoParede
+                            particula2.velocidadeY = backupVelocidade[1]*dissipacaoParede
                         }
                     }
                 })
@@ -141,6 +149,12 @@
                 ctx.fill()
             });
         }
+
+        addEventListener("keypress", (e) =>{
+            if(e.code = 's'){
+                mudarSinal()
+            }
+        })
 
         function mudarSinal() {
             let botao = document.querySelector('.sinal')
